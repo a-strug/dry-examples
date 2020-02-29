@@ -1,0 +1,105 @@
+#!/usr/bin/env ruby
+require "bundler/setup"
+require "dry/cli"
+
+module TV
+  module CLI
+    module Commands
+      extend Dry::CLI::Registry
+
+      class TurnOn < Dry::CLI::Command
+        desc "Turn TV on"
+
+        def call(**)
+          puts "TV is on"
+        end
+      end
+
+      class TurnOff < Dry::CLI::Command
+        desc "Turn TV off"
+
+        def call(**)
+          puts "TV is off"
+        end
+      end
+
+      class ModeSwitcher < Dry::CLI::Command
+        desc "Switch different modes"
+
+        example [
+          "--nightshift # Turn on nightshift mode",
+          "--no-nightshift # Turn off nightshift mode"
+        ]
+
+        option :nightshift, type: :boolean, default: false, desc: "Nightshift mode"
+
+        def call(**modes)
+          puts "Nightshift mode is #{map(modes[:nightshift])}"
+        end
+
+        def map(mode)
+          {
+            true => "on",
+            false => "off"
+          }[mode]
+        end
+      end
+
+      class Volume < Dry::CLI::Command
+        desc "Make it louder or quieter"
+
+        def call(direction:, times: 1, **)
+          return puts("Getting #{direction} by #{Integer(times)}")
+        rescue ArgumentError
+          puts("Uknown times")
+        end
+      end
+
+      class Louder < Dry::CLI::Command
+        desc "Make it louder"
+
+        argument :times, type: :integer, required: false, desc: "Apply times"
+
+        def call(times: 1, **)
+          Volume.new.call(direction: "louder", times: times)
+        end
+      end
+
+      class Quiter < Dry::CLI::Command
+        desc "Make it quieter"
+
+        argument :times, type: :integer, required: false, desc: "Apply times"
+
+        def call(times: 1, **)
+          Volume.new.call(direction: "quiter", times: times)
+        end
+      end
+
+      class NextChannel < Dry::CLI::Command
+        desc "Go to the next channel"
+
+        def call(**)
+          puts "Switch to the next channel"
+        end
+      end
+
+      class PreviousChannel < Dry::CLI::Command
+        desc "Go to the previous channel"
+
+        def call(**)
+          puts "Switch to the previous channel"
+        end
+      end
+
+      register "on", TurnOn
+      register "off", TurnOff
+      register "mode", ModeSwitcher
+      register "louder", Louder, aliases: ["+"]
+      register "quiter", Quiter, aliases: ["-"]
+      register "next", NextChannel, aliases: [">"]
+      register "pred", PreviousChannel, aliases: ["<"]
+    end
+  end
+end
+
+Dry::CLI.new(TV::CLI::Commands).call
